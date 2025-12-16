@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .cart-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-total {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 15px;
+            text-align: right;
+            color: #2c3e50;
+        }
+
+        .payment-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-success {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #229954;
+        }
+
+        /* Modal Backdrop - Fixed centering */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            color: #2c3e50;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #7f8c8d;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+        }
+
+        .close-btn:hover {
+            color: #e74c3c;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        /* Cash Payment Section */
+        .cash-section {
+            display: none;
+        }
+
+        .cash-section.active {
+            display: block;
+        }
+
+        .quick-cash-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .quick-cash-btn {
+            padding: 15px;
+            font-size: 18px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .quick-cash-btn:hover {
+            background-color: #229954;
+        }
+
+        .amount-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .change-display {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .change-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+            margin-top: 5px;
+        }
+
+        /* PromptPay Section */
+        .promptpay-section {
+            display: none;
+            text-align: center;
+        }
+
+        .promptpay-section.active {
+            display: block;
+        }
+
+        .qr-code {
+            width: 250px;
+            height: 250px;
+            background-color: #f8f9fa;
+            border: 2px solid #ddd;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+
+        .qr-placeholder {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .confirmation-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 5px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-container label {
+            font-size: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background-color: #7f8c8d;
+        }
+
+        .btn-confirm {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background-color: #229954;
+        }
+
+        .btn-confirm:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .total-display {
+            font-size: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .total-amount {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>POS System</h1>
+        
+        <div class="cart-section">
+            <h2>Cart</h2>
+            <div id="cart-items">
+                <div class="cart-item">
+                    <span>Product A</span>
+                    <span>$25.00</span>
+                </div>
+                <div class="cart-item">
+                    <span>Product B</span>
+                    <span>$35.50</span>
+                </div>
+                <div class="cart-item">
+                    <span>Product C</span>
+                    <span>$15.00</span>
+                </div>
+            </div>
+            <div class="cart-total">
+                Total: $<span id="total-amount">75.50</span>
+            </div>
+        </div>
+
+        <div class="payment-buttons">
+            <button class="btn btn-primary" onclick="openPaymentModal('cash')">Pay with Cash</button>
+            <button class="btn btn-success" onclick="openPaymentModal('promptpay')">Pay with PromptPay (QR)</button>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal-backdrop">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Payment</h2>
+                <button class="close-btn" onclick="closePaymentModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="total-display">
+                    <div>Total Amount:</div>
+                    <div class="total-amount">$<span id="modal-total">75.50</span></div>
+                </div>
+
+                <!-- Cash Payment Section -->
+                <div id="cash-section" class="cash-section">
+                    <h3>Quick Cash Amounts</h3>
+                    <div class="quick-cash-buttons">
+                        <button class="quick-cash-btn" onclick="setQuickCash(50)">$50</button>
+                        <button class="quick-cash-btn" onclick="setQuickCash(80)">$80</button>
+                        <button class="quick-cash-btn" onclick="setQuickCash(100)">$100</button>
+                        <button class="quick-cash-btn" onclick="setQuickCash(150)">$150</button>
+                        <button class="quick-cash-btn" onclick="setQuickCash(200)">$200</button>
+                        <button class="quick-cash-btn" onclick="setQuickCash(500)">$500</button>
+                    </div>
+                    
+                    <label for="cash-received">Cash Received:</label>
+                    <input type="number" id="cash-received" class="amount-input" 
+                           placeholder="Enter amount" step="0.01" min="0" 
+                           oninput="calculateChange()">
+                    
+                    <div class="change-display">
+                        <div>Change:</div>
+                        <div class="change-amount" id="change-amount">$0.00</div>
+                    </div>
+                </div>
+
+                <!-- PromptPay Payment Section -->
+                <div id="promptpay-section" class="promptpay-section">
+                    <h3>Scan QR Code to Pay</h3>
+                    <div class="qr-code">
+                        <div class="qr-placeholder">
+                            [QR Code Here]<br>
+                            Scan with PromptPay app
+                        </div>
+                    </div>
+                    
+                    <div class="confirmation-section">
+                        <p><strong>⚠️ Important:</strong> Please confirm after customer completes payment</p>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="payment-confirmation" onchange="toggleConfirmButton()">
+                            <label for="payment-confirmation">Confirm Payment Received</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closePaymentModal()">Cancel</button>
+                <button class="btn btn-confirm" id="confirm-btn" onclick="confirmPayment()">Complete Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPaymentMethod = 'cash';
+        const totalAmount = 75.50;
+
+        function openPaymentModal(method) {
+            currentPaymentMethod = method;
+            const modal = document.getElementById('payment-modal');
+            const cashSection = document.getElementById('cash-section');
+            const promptpaySection = document.getElementById('promptpay-section');
+            const modalTitle = document.getElementById('modal-title');
+            const confirmBtn = document.getElementById('confirm-btn');
+            const paymentConfirmation = document.getElementById('payment-confirmation');
+
+            // Update modal title
+            if (method === 'cash') {
+                modalTitle.textContent = 'Cash Payment';
+            } else {
+                modalTitle.textContent = 'PromptPay Payment';
+            }
+
+            // Show only the selected payment method section (exclusive visibility)
+            if (method === 'cash') {
+                cashSection.classList.add('active');
+                promptpaySection.classList.remove('active');
+                confirmBtn.disabled = false;
+            } else {
+                cashSection.classList.remove('active');
+                promptpaySection.classList.add('active');
+                paymentConfirmation.checked = false;
+                confirmBtn.disabled = true;
+            }
+
+            // Reset cash section
+            document.getElementById('cash-received').value = '';
+            document.getElementById('change-amount').textContent = '$0.00';
+
+            // Update total display
+            document.getElementById('modal-total').textContent = totalAmount.toFixed(2);
+
+            // Show modal
+            modal.classList.add('active');
+        }
+
+        function closePaymentModal() {
+            const modal = document.getElementById('payment-modal');
+            modal.classList.remove('active');
+        }
+
+        function setQuickCash(amount) {
+            const cashInput = document.getElementById('cash-received');
+            cashInput.value = amount;
+            calculateChange();
+        }
+
+        function calculateChange() {
+            const cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
+            const change = cashReceived - totalAmount;
+            const changeDisplay = document.getElementById('change-amount');
+            
+            if (change >= 0) {
+                changeDisplay.textContent = '$' + change.toFixed(2);
+                changeDisplay.style.color = '#27ae60';
+            } else {
+                changeDisplay.textContent = '-$' + Math.abs(change).toFixed(2);
+                changeDisplay.style.color = '#e74c3c';
+            }
+        }
+
+        function toggleConfirmButton() {
+            const confirmBtn = document.getElementById('confirm-btn');
+            const paymentConfirmation = document.getElementById('payment-confirmation');
+            
+            if (currentPaymentMethod === 'promptpay') {
+                confirmBtn.disabled = !paymentConfirmation.checked;
+            }
+        }
+
+        function confirmPayment() {
+            if (currentPaymentMethod === 'cash') {
+                const cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
+                if (cashReceived < totalAmount) {
+                    alert('Insufficient cash received!');
+                    return;
+                }
+                alert('Cash payment completed! Change: $' + (cashReceived - totalAmount).toFixed(2));
+            } else {
+                const paymentConfirmation = document.getElementById('payment-confirmation');
+                if (!paymentConfirmation.checked) {
+                    alert('Please confirm that payment has been received!');
+                    return;
+                }
+                alert('PromptPay payment completed!');
+            }
+            closePaymentModal();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('payment-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePaymentModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -651,8 +651,12 @@ h1, h2, h3, h4, h5, h6 {
     height: 100vh;
     background: rgba(0,0,0,0.45) !important;
     display: none;
-    align-items: center;
-    justify-content: center;
+}
+.modal-backdrop[style*="display: flex"],
+.modal-backdrop[style*="display:flex"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 /* Middle links */
@@ -2969,10 +2973,12 @@ function calcCashChange() {
       if (paymentHidden) paymentHidden.value = method;
       payButtons.forEach(function(b){ b.classList.remove('active'); });
       this.classList.add('active');
+      
+      // Exclusive UI logic: show only relevant payment UI
       var cashPanel = document.getElementById('cash-panel-wrapper');
       if (cashPanel) cashPanel.style.display = (method === 'cash') ? 'block' : 'none';
 
-      // Show/hide PromptPay QR when selected
+      // Show/hide PromptPay QR when selected (exclusive)
       if (method === 'promptpay') {
         var total = (panel && panel.dataset.total) ? panel.dataset.total : ('<?= number_format($total, 2, '.', '') ?>');
         if (promptpayInline) {
@@ -3001,11 +3007,18 @@ function calcCashChange() {
   var checkoutForm = document.getElementById('checkout_form');
   function openPromptpayModal() {
     var existing = document.getElementById('promptpayModal');
-    if (existing) { existing.style.display = 'flex'; return; }
+    if (existing) { 
+      existing.style.display = 'flex'; 
+      existing.style.alignItems = 'center';
+      existing.style.justifyContent = 'center';
+      return; 
+    }
     var modal = document.createElement('div');
     modal.id = 'promptpayModal';
     modal.className = 'modal-backdrop';
     modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
     modal.innerHTML = '<div class="modal-content" style="max-width:360px;text-align:center;">' +
       '<button class="modal-close-btn" onclick="document.getElementById(\\'promptpayModal\\').style.display=\\'none\\'">&times;</button>' +
       '<div style="font-weight:700;margin-bottom:8px;">PromptPay — สแกนเพื่อชำระ</div>' +

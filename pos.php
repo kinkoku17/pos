@@ -653,9 +653,9 @@ h1, h2, h3, h4, h5, h6 {
     display: none;
 }
 .modal-backdrop.show {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Middle links */

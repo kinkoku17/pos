@@ -2972,27 +2972,23 @@ function calcCashChange() {
       var cashPanel = document.getElementById('cash-panel-wrapper');
       if (cashPanel) cashPanel.style.display = (method === 'cash') ? 'block' : 'none';
 
+      // Show/hide PromptPay QR when selected
       if (method === 'promptpay') {
         var total = (panel && panel.dataset.total) ? panel.dataset.total : ('<?= number_format($total, 2, '.', '') ?>');
         if (promptpayInline) {
           promptpayInline.style.display = 'block';
           if (promptpayInlineImg) promptpayInlineImg.src = buildPromptPayUrl(promptTel, total);
         }
-        // Persist cash value when switching away from cash
-        try {
-          var v = document.getElementById('cash_received');
-          if (v) localStorage.setItem('pos_cash_received', String(Math.round((parseFloat(v.value)||0)*100)));
-        } catch(e){}
       } else {
         if (promptpayInline) promptpayInline.style.display = 'none';
       }
 
-      // Handle cash method
+      // Handle cash method UI refresh or persist cash value for non-cash methods
       if (method === 'cash') {
         // Refresh UI but don't overwrite restored typed values
         if (typeof updateCashReceived === 'function') updateCashReceived();
       } else {
-        // Persist typed or quick-cash value for non-cash methods
+        // Persist typed or quick-cash value when switching to non-cash payment methods
         try {
           var v = document.getElementById('cash_received');
           if (v) localStorage.setItem('pos_cash_received', String(Math.round((parseFloat(v.value)||0)*100)));

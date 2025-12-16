@@ -643,17 +643,17 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Improve modal backdrop appearance (improved cash / QR backdrop) */
 .modal-backdrop {
-+    position: fixed;
-+    z-index: 200000 !important;
-+    left: 0;
-+    top: 0;
-+    width: 100vw;
-+    height: 100vh;
-+    background: rgba(0,0,0,0.45) !important;
-+    display: none !important;
-+    align-items: center;
-+    justify-content: center;
-+}
+    position: fixed;
+    z-index: 200000 !important;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.45) !important;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
 
 /* Middle links */
 .nav-links {
@@ -2972,6 +2972,7 @@ function calcCashChange() {
       var cashPanel = document.getElementById('cash-panel-wrapper');
       if (cashPanel) cashPanel.style.display = (method === 'cash') ? 'block' : 'none';
 
+      // Show/hide PromptPay QR when selected
       if (method === 'promptpay') {
         var total = (panel && panel.dataset.total) ? panel.dataset.total : ('<?= number_format($total, 2, '.', '') ?>');
         if (promptpayInline) {
@@ -2980,6 +2981,18 @@ function calcCashChange() {
         }
       } else {
         if (promptpayInline) promptpayInline.style.display = 'none';
+      }
+
+      // Handle cash method UI refresh or persist cash value for non-cash methods
+      if (method === 'cash') {
+        // Refresh UI but don't overwrite restored typed values
+        if (typeof updateCashReceived === 'function') updateCashReceived();
+      } else {
+        // Persist typed or quick-cash value when switching to non-cash payment methods
+        try {
+          var v = document.getElementById('cash_received');
+          if (v) localStorage.setItem('pos_cash_received', String(Math.round((parseFloat(v.value)||0)*100)));
+        } catch(e){}
       }
     });
   });
@@ -2998,8 +3011,14 @@ function calcCashChange() {
       '<div style="font-weight:700;margin-bottom:8px;">PromptPay — สแกนเพื่อชำระ</div>' +
       '<div id="pp_qr_holder" style="padding:8px 0;"><img id="pp_qr_img" src="" alt="PromptPay QR" style="width:220px;max-width:96%;background:#fff;padding:8px;border-radius:8px;"></div>' +
       '<div id="pp_meta" style="color:#666;margin-top:8px;"></div>' +
+      '<div style="margin-top:14px;padding:12px;background:#f9f9f9;border-radius:8px;">' +
+        '<label style="display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:0.95em;">' +
+          '<input type="checkbox" id="pp_payment_confirmed_checkbox" style="width:18px;height:18px;cursor:pointer;">' +
+          '<span>✅ ยืนยันว่าได้รับเงินแล้ว (Confirm Payment Received)</span>' +
+        '</label>' +
+      '</div>' +
       '<div style="margin-top:14px;display:flex;gap:8px;justify-content:center;">' +
-        '<button id="pp_confirm_paid" class="btn btn-custom-item">ยืนยันรับเงิน</button>' +
+        '<button id="pp_confirm_paid" class="btn btn-custom-item" disabled>ยืนยันรับเงิน</button>' +
         '<button id="pp_close" class="btn btn-grey">ปิด</button>' +
       '</div>' +
     '</div>';
@@ -3011,6 +3030,15 @@ function calcCashChange() {
     img.src = buildPromptPayUrl(promptTel, total);
     if (meta) meta.innerHTML = 'Tel <?= htmlspecialchars(mask_promptpay_phone($PROMPTPAY_TEL)) ?> • Amount ' + parseFloat(total).toFixed(2) + ' ฿';
 
+    // Enable confirm button only when checkbox is checked
+    var checkbox = modal.querySelector('#pp_payment_confirmed_checkbox');
+    var confirmBtn = modal.querySelector('#pp_confirm_paid');
+    if (checkbox && confirmBtn) {
+      checkbox.addEventListener('change', function() {
+        confirmBtn.disabled = !this.checked;
+      });
+    }
+
     modal.querySelector('#pp_close').addEventListener('click', function(){ modal.style.display = 'none'; });
     modal.querySelector('#pp_confirm_paid').addEventListener('click', function(){
       var fld = document.getElementById('promptpay_confirm');
@@ -3029,139 +3057,6 @@ function calcCashChange() {
         e.preventDefault();
         openPromptpayModal();
       }
-    });
-  }
-})();
-</script>
-
-
-
-// When switching payment method: preserve the current cash value to localStorage BEFORE submitting
-document.querySelectorAll('.payment-method').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    var method = this.dataset.value || 'cash';
-    var hidden = document.getElementById('payment_method_selected');
-    if (hidden) hidden.value = method;
-    document.querySelectorAll('.payment-method').forEach(function(b){ b.classList.remove('active'); });
-    this.classList.add('active');
-    var cashPanel = document.getElementById('cash-panel-wrapper');
-    if (cashPanel) cashPanel.style.display = (method === 'cash') ? 'block' : 'none';
-    if (method === 'cash') {
-      // do not wipe cashier input; just refresh UI (but don't overwrite restored typed values)
-      updateCashReceived();
-    } else {
-        // persist typed or quick-cash value for later restoration (do NOT auto-submit)
-        try {
-        var v = document.getElementById('cash_received');
-          if (v) localStorage.setItem('pos_cash_received', String(Math.round((parseFloat(v.value)||0)*100)));
-        } catch(e){}
-        // NOTE: removed automatic f.submit() here to avoid unintended page reloads
-      }
-  });
-});
-
-// If the page server-side selected cash on load, calling updateCashReceived() when cashNotes is empty
-// would overwrite a restored typed value. We avoid forcing an overwrite here.
-if ('<?= $selected_method ?>' === 'cash') {
-    // do nothing here — restoration happens in the restoration IIFE below which runs on DOMContentLoaded
-}
-
-
-
-</script>
-
-<!-- PromptPay handling: update inline QR and show PromptPay modal on Pay -->
-<script>
-(function(){
-  var payButtons = document.querySelectorAll('.payment-method');
-  var paymentHidden = document.getElementById('payment_method_selected');
-  var promptpayInline = document.getElementById('promptpayInline');
-  var promptpayInlineImg = document.getElementById('promptpayInlineImg');
-  // data attributes from payment-panel
-  var panel = document.getElementById('payment-panel');
-  var promptTel = panel ? panel.dataset.promptpayTel : '<?= htmlspecialchars($PROMPTPAY_TEL) ?>';
-  function buildPromptPayUrl(tel, amount) {
-    var clean = (''+tel).replace(/[^0-9]/g,'');
-    amount = parseFloat(amount||0).toFixed(2);
-    return 'https://promptpay.io/' + clean + '/' + amount + '.png';
-  }
-
-  payButtons.forEach(function(btn){
-    btn.addEventListener('click', function() {
-      var method = this.dataset.value || 'cash';
-      if (paymentHidden) paymentHidden.value = method;
-      document.querySelectorAll('.payment-method').forEach(function(b){ b.classList.remove('active'); });
-      this.classList.add('active');
-      var cashPanel = document.getElementById('cash-panel-wrapper');
-      if (cashPanel) cashPanel.style.display = (method === 'cash') ? 'block' : 'none';
-
-      // If promptpay selected, show the inline QR immediately (update amount too)
-      if (method === 'promptpay') {
-        var total = (panel && panel.dataset.total) ? panel.dataset.total : ('<?= number_format($total, 2, '.', '') ?>');
-        if (promptpayInline) {
-          promptpayInline.style.display = 'block';
-          // refresh image src to include current amount
-          if (promptpayInlineImg) promptpayInlineImg.src = buildPromptPayUrl(promptTel, total);
-        }
-      } else {
-        if (promptpayInline) promptpayInline.style.display = 'none';
-      }
-      // for non-cash methods we avoid auto-submitting here; the pay button flow will handle it.
-    });
-  });
-
-  // Intercept pay button click to show a PromptPay-focused modal when needed
-  var payNowBtn = document.getElementById('pay_now_btn');
-  var checkoutForm = document.getElementById('checkout_form');
-  if (payNowBtn && checkoutForm) {
-    payNowBtn.addEventListener('click', function(e){
-      var selected = (document.getElementById('payment_method_selected') || {}).value || 'cash';
-      if (selected === 'promptpay') {
-        // Prevent actual form submit – show promptpay modal for scanning + confirm
-        e.preventDefault();
-        openPromptpayModal();
-      } else {
-        // allow normal submit (cash/card)
-      }
-    });
-  }
-
-  // Create promptpay modal element (lazy)
-  function openPromptpayModal() {
-    var existing = document.getElementById('promptpayModal');
-    if (existing) { existing.style.display = 'flex'; return; }
-
-    var modal = document.createElement('div');
-    modal.id = 'promptpayModal';
-    modal.className = 'modal-backdrop';
-    modal.style.display = 'flex';
-    modal.innerHTML = '<div class="modal-content" style="max-width:360px;text-align:center;">' +
-      '<button class="modal-close-btn" onclick="document.getElementById(\\'promptpayModal\\').style.display=\\'none\\'">&times;</button>' +
-      '<div style="font-weight:700;margin-bottom:8px;">PromptPay — Scan to pay</div>' +
-      '<div id="pp_qr_holder" style="padding:8px 0;"><img id="pp_qr_img" src="" alt="PromptPay QR" style="width:220px;max-width:96%;background:#fff;padding:8px;border-radius:8px;"></div>' +
-      '<div id="pp_meta" style="color:#666;margin-top:8px;"></div>' +
-      '<div style="margin-top:14px;display:flex;gap:8px;justify-content:center;">' +
-        '<button id="pp_confirm_paid" class="btn btn-custom-item">Confirm paid</button>' +
-        '<button id="pp_close" class="btn btn-grey">Close</button>' +
-      '</div>' +
-    '</div>';
-    document.body.appendChild(modal);
-
-    var total = (panel && panel.dataset.total) ? panel.dataset.total : ('<?= number_format($total, 2, '.', '') ?>');
-    var img = modal.querySelector('#pp_qr_img');
-    var meta = modal.querySelector('#pp_meta');
-    img.src = buildPromptPayUrl(promptTel, total);
-    if (meta) meta.innerHTML = 'Tel <?= htmlspecialchars(mask_promptpay_phone($PROMPTPAY_TEL)) ?> • Amount ' + parseFloat(total).toFixed(2) + ' ฿';
-
-    modal.querySelector('#pp_close').addEventListener('click', function(){ modal.style.display = 'none'; });
-    modal.querySelector('#pp_confirm_paid').addEventListener('click', function(){
-      // mark the checkout form to indicate user confirmed promptpay payment, then submit
-      var fld = document.getElementById('promptpay_confirm');
-      if (fld) fld.value = '1';
-      var hidden = document.getElementById('payment_method_selected');
-      if (hidden) hidden.value = 'promptpay';
-      modal.style.display = 'none';
-      checkoutForm.submit();
     });
   }
 })();

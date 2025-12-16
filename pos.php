@@ -652,8 +652,7 @@ h1, h2, h3, h4, h5, h6 {
     background: rgba(0,0,0,0.45) !important;
     display: none;
 }
-.modal-backdrop[style*="display: flex"],
-.modal-backdrop[style*="display:flex"] {
+.modal-backdrop.show {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -2431,7 +2430,7 @@ pay-now-btn .method-label {
     function openCustomItemModal() {
         var m = document.getElementById('customItemModal');
         if (!m) return;
-        m.style.display = 'flex';
+        m.classList.add('show');
         setTimeout(function() {
             var el = document.getElementById('customItemName');
             if (el) el.focus();
@@ -2439,14 +2438,26 @@ pay-now-btn .method-label {
     }
     function closeCustomItemModal() {
         var m = document.getElementById('customItemModal');
-        if (m) m.style.display = 'none';
+        if (m) m.classList.remove('show');
         var f = document.getElementById('customItemForm'); if (f) f.reset();
     }
 
-    function openSalesHistoryModal() { document.getElementById('salesHistoryModal').style.display = 'flex'; }
-    function closeSalesHistoryModal() { document.getElementById('salesHistoryModal').style.display = 'none'; }
-    function openHeldBillsModal() { document.getElementById('heldBillsModal').style.display = 'flex'; }
-    function closeHeldBillsModal() { document.getElementById('heldBillsModal').style.display = 'none'; }
+    function openSalesHistoryModal() { 
+        var m = document.getElementById('salesHistoryModal');
+        if (m) m.classList.add('show');
+    }
+    function closeSalesHistoryModal() { 
+        var m = document.getElementById('salesHistoryModal');
+        if (m) m.classList.remove('show');
+    }
+    function openHeldBillsModal() { 
+        var m = document.getElementById('heldBillsModal');
+        if (m) m.classList.add('show');
+    }
+    function closeHeldBillsModal() { 
+        var m = document.getElementById('heldBillsModal');
+        if (m) m.classList.remove('show');
+    }
 </script>
 </head>
 <body>
@@ -2552,7 +2563,7 @@ pay-now-btn .method-label {
 </div>
 
 <!-- CUSTOM ITEM MODAL (single copy) -->
-<div id="customItemModal" class="modal-backdrop" style="display:none; align-items: flex-start; justify-content: center;">
+<div id="customItemModal" class="modal-backdrop" style="display:none;">
   <div class="modal-content">
     <button class="modal-close-btn" onclick="closeCustomItemModal()" title="ปิด">&times;</button>
     <div class="modal-title">เพิ่มรายการพิเศษ</div>
@@ -3005,22 +3016,23 @@ function calcCashChange() {
 
   var payNowBtn = document.getElementById('pay_now_btn');
   var checkoutForm = document.getElementById('checkout_form');
+  
+  function closePromptpayModal() {
+    var modal = document.getElementById('promptpayModal');
+    if (modal) modal.classList.remove('show');
+  }
+  
   function openPromptpayModal() {
     var existing = document.getElementById('promptpayModal');
     if (existing) { 
-      existing.style.display = 'flex'; 
-      existing.style.alignItems = 'center';
-      existing.style.justifyContent = 'center';
+      existing.classList.add('show');
       return; 
     }
     var modal = document.createElement('div');
     modal.id = 'promptpayModal';
-    modal.className = 'modal-backdrop';
-    modal.style.display = 'flex';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
+    modal.className = 'modal-backdrop show';
     modal.innerHTML = '<div class="modal-content" style="max-width:360px;text-align:center;">' +
-      '<button class="modal-close-btn" onclick="document.getElementById(\\'promptpayModal\\').style.display=\\'none\\'">&times;</button>' +
+      '<button class="modal-close-btn" onclick="closePromptpayModal()">&times;</button>' +
       '<div style="font-weight:700;margin-bottom:8px;">PromptPay — สแกนเพื่อชำระ</div>' +
       '<div id="pp_qr_holder" style="padding:8px 0;"><img id="pp_qr_img" src="" alt="PromptPay QR" style="width:220px;max-width:96%;background:#fff;padding:8px;border-radius:8px;"></div>' +
       '<div id="pp_meta" style="color:#666;margin-top:8px;"></div>' +
@@ -3052,13 +3064,13 @@ function calcCashChange() {
       });
     }
 
-    modal.querySelector('#pp_close').addEventListener('click', function(){ modal.style.display = 'none'; });
+    modal.querySelector('#pp_close').addEventListener('click', function(){ closePromptpayModal(); });
     modal.querySelector('#pp_confirm_paid').addEventListener('click', function(){
       var fld = document.getElementById('promptpay_confirm');
       if (fld) fld.value = '1';
       var hidden = document.getElementById('payment_method_selected');
       if (hidden) hidden.value = 'promptpay';
-      modal.style.display = 'none';
+      closePromptpayModal();
       checkoutForm.submit();
     });
   }
@@ -3076,7 +3088,7 @@ function calcCashChange() {
 </script>
 
 <!-- Product Info Modal -->
-<div id="productInfoModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:9999;">
+<div id="productInfoModal" class="modal-backdrop" style="display:none;">
     <div style="background:#fff;padding:20px;border-radius:10px;max-width:400px;width:90%;position:relative;">
         <button onclick="closeModal()" style="position:absolute;top:10px;right:10px;font-size:1.2em;border:none;background:none;cursor:pointer;">&times;</button>
         <img id="modalImage" src="" width="100%" style="object-fit:cover;border-radius:7px;margin-bottom:10px;">
@@ -3094,15 +3106,17 @@ function openModal(name, code, price, image, desc) {
     document.getElementById('modalPrice').textContent = price;
     document.getElementById('modalDesc').textContent = desc || '';
     document.getElementById('modalImage').src = image || 'uploads/no-image.png';
-    document.getElementById('productInfoModal').style.display = 'flex';
+    var m = document.getElementById('productInfoModal');
+    if (m) m.classList.add('show');
 }
 function closeModal() {
-    document.getElementById('productInfoModal').style.display = 'none';
+    var m = document.getElementById('productInfoModal');
+    if (m) m.classList.remove('show');
 }
 </script>
 
 <!-- RECEIPT MODAL -->
-<div id="receiptModal" class="modal-backdrop" style="display:none; align-items:center; justify-content:center;">
+<div id="receiptModal" class="modal-backdrop" style="display:none;">
   <div class="modal-content receipt-modal-content" style="width:440px; max-width:97%; padding:20px; box-sizing:border-box;">
     <button class="modal-close-btn" onclick="closeReceiptModal()" title="ปิด" style="font-size:1.2em;">&times;</button>
     <div id="printable-receipt" style="font-family: 'Helvetica Neue', Arial, sans-serif; color:#222;">
@@ -3243,12 +3257,12 @@ foreach (($receipt_data['cart'] ?? []) as $item):
 function closeReceiptModal(){
   var m = document.getElementById('receiptModal');
   if (!m) return;
-  m.style.display = 'none';
+  m.classList.remove('show');
 }
 <?php if (!empty($show_receipt)): ?>
 document.addEventListener('DOMContentLoaded', function(){
   var m = document.getElementById('receiptModal');
-  if (m) m.style.display = 'flex';
+  if (m) m.classList.add('show');
   // optional: don't auto print here to let cashier choose
 });
 <?php endif; ?>

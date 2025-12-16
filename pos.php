@@ -2024,10 +2024,7 @@ filter: brightness(1.08);
 
 
 
-/* Modal styles (for all modals) */
-.modal-backdrop {
-    position: fixed; z-index: 1000; left: 0; top: 0; width: 100vw; height: 100vh; background: #0006; display: none; align-items: center; justify-content: center;
-}
+/* Modal styles (for all modals) - consolidated with improved backdrop */
 .modal-content {
     background: #fff;
     border-radius: 13px;

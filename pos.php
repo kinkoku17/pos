@@ -2945,6 +2945,7 @@ function calcCashChange() {
     var el = document.getElementById('change_amount');
     if (el) el.innerText = (change > 0 ? change.toFixed(2) : "0.00");
 }
+</script>
 
 <script>
 (function(){
